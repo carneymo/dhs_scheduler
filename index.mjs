@@ -1,22 +1,35 @@
 import https from "https";
+import AWS from "aws-sdk";
+
+AWS.config.update({ region: "us-east-2" });
+const sns = new AWS.SNS();
 
 // We want denver appointments!
-const dhs_denver_endpoint =
-  "https://ttp.cbp.dhs.gov/schedulerapi/slot-availability?locationId=6940";
+const dhs_denver_endpoint = {
+  name: "DHS Denver Location",
+  url: "https://ttp.cbp.dhs.gov/schedulerapi/slot-availability?locationId=6940",
+};
 
 // This had slots when I last checked 28 April 2024, useful for testing
-const dhs_texas_endpoint =
-  "https://ttp.cbp.dhs.gov/schedulerapi/slot-availability?locationId=5003";
+const dhs_texas_endpoint = {
+  name: "DHS Texas Location",
+  url: "https://ttp.cbp.dhs.gov/schedulerapi/slot-availability?locationId=5003",
+};
+
+// "Production" is Denver endpoint
+let current_endpoint = dhs_denver_endpoint;
+
+// "Testing" is the Texas endpoint (cause I know it has slots)
+// let current_endpoint = dhs_texas_endpoint;
 
 export const handler = async (event) => {
   try {
     const available = await checkAvailability();
     if (available) {
       console.log("Slots available");
-      return { statusCode: 200, body: "success" };
+      await notifyAvailability();
     } else {
       console.log("No slots available");
-      return { statusCode: 200, body: "failure" };
     }
   } catch (error) {
     console.error("Error checking availability:", error);
@@ -24,10 +37,21 @@ export const handler = async (event) => {
   }
 };
 
+async function notifyAvailability() {
+  const params = {
+    Message:
+      "An appointment slot is available! We checked this endpoint: " +
+      current_endpoint.name,
+    TopicArn: process.env.SNS_TOPIC_ARN,
+  };
+  console.log("Publishing to SNS with params:", params);
+  return sns.publish(params).promise();
+}
+
 function checkAvailability() {
   return new Promise((resolve, reject) => {
     https
-      .get(dhs_denver_endpoint, (res) => {
+      .get(current_endpoint.url, (res) => {
         let data = "";
         res.on("data", (chunk) => (data += chunk));
         res.on("end", () => {
