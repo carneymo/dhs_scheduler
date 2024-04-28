@@ -1,5 +1,6 @@
 const AWSMock = require("aws-sdk-mock");
 const AWS = require("aws-sdk");
+require("aws-sdk/lib/maintenance_mode_message").suppress = true;
 
 AWSMock.setSDKInstance(AWS); // Ensure that aws-sdk-mock uses the same AWS instance
 require("dotenv").config();
@@ -15,7 +16,7 @@ const sns = new AWS.SNS();
 test("SNS publish test", async () => {
   const params = {
     Message: "Testing SNS Mock",
-    TopicArn: "arn:aws:sns:your-topic-arn",
+    TopicArn: process.env.SNS_TOPIC_ARN,
   };
 
   const result = await sns.publish(params).promise();

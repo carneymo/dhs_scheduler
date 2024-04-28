@@ -1,6 +1,10 @@
 const AWSMock = require("aws-sdk-mock");
+const AWS = require("aws-sdk");
+require("aws-sdk/lib/maintenance_mode_message").suppress = true;
+
+AWSMock.setSDKInstance(AWS);
+
 const { handler } = require("../index");
-require("dotenv").config();
 
 // Mock SNS
 AWSMock.mock("SNS", "publish", (params, callback) => {
@@ -13,15 +17,5 @@ test("Test appointment availability check", async () => {
   const event = {};
   const response = await handler(event);
   expect(response).toEqual({ status: "Done" });
-});
-
-// After each test
-afterEach(() => {
-  AWSMock.restore("SNS");
-  jest.resetModules(); // this ensures that each test has a clean slate
-});
-
-// After tests
-afterAll(() => {
   AWSMock.restore("SNS");
 });

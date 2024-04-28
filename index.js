@@ -12,9 +12,7 @@ exports.handler = async (event) => {
   let available = await checkAvailability();
   if (available) {
     await notifyAvailability();
-  } else if (!available && process.env.LOCAL_TEST) {
-    // await notifyUnavailability();
-  } // Else do nothing
+  }
   return { status: "Done" };
 };
 
@@ -46,17 +44,17 @@ function checkAvailability() {
 function notifyUnavailability() {
   const params = {
     Message: "No appointments available.",
-    TopicArn: "arn:aws:sns:your-topic-arn",
+    TopicArn: process.env.SNS_TOPIC_ARN,
   };
-
+  console.log("Publishing to SNS with params:", params);
   return sns.publish(params).promise();
 }
 
 function notifyAvailability() {
   const params = {
     Message: "An appointment slot is available!",
-    TopicArn: "arn:aws:sns:your-topic-arn",
+    TopicArn: process.env.SNS_TOPIC_ARN,
   };
-
+  console.log("Publishing to SNS with params:", params);
   return sns.publish(params).promise();
 }
