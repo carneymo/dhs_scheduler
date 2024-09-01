@@ -36,7 +36,7 @@ export const handler = async (event) => {
 
     // If availble, let's notify via SNS
     if (res.available) {
-      await notifyAvailability();
+      await notifyAvailability(res);
     }
   } catch (error) {
     console.error("Error checking availability:", error);
@@ -49,9 +49,9 @@ export const handler = async (event) => {
  * Will publish the new slot information to SNS.
  * @returns Promise
  */
-async function notifyAvailability() {
+async function notifyAvailability(res) {
   let slots = [];
-  parsed_data["availableSlots"].array.forEach(element => {
+  res.data["availableSlots"].forEach(element => {
     let [date, time] = element.startTimestamp.split('T');
     /**
      * Location: current_endpoint.name
@@ -69,7 +69,7 @@ async function notifyAvailability() {
   const params = {
     Message:
       "An appointment slot is available! We checked the following endpoint: \n" +
-      current_endpoint.name + "\n" + current_endpoint.url + "\n" +
+      current_endpoint.name + "\n" + current_endpoint.url + "\n\n" +
       "--- APPOINTMENT SLOTS AVAILABLE --- \n\n" +
       slots.join('\n'),
     TopicArn: process.env.SNS_TOPIC_ARN,
